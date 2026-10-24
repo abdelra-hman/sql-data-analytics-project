@@ -115,11 +115,7 @@ By completing this project, you can develop practical experience in:
 - Identifying sales trends and customer behavior.
 - Producing structured reports from a relational database.
 
-## 🎓 Learning Resources
 
-This project is based on learning materials and resources provided by **Data With Baraa**.
-
-- **GitHub Repository:** https://github.com/DataWithBaraa/sql-data-analytics-project
 
 ## 📄 License
 
