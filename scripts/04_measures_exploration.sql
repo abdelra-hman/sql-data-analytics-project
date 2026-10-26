@@ -1,3 +1,16 @@
+/*
+===============================================================================
+Measures Exploration (Key Metrics)
+===============================================================================
+Purpose:
+    - To calculate aggregated metrics (e.g., totals, averages) for quick insights.
+    - To identify overall trends or spot anomalies.
+
+SQL Functions Used:
+    - COUNT(), SUM(), AVG()
+===============================================================================
+*/
+
 -- Find the Total Sales
 SELECT SUM(sales_amount) AS total_sales FROM gold.fact_sales
 
@@ -19,7 +32,6 @@ SELECT COUNT(customer_key) AS total_customers FROM gold.dim_customers;
 
 -- Find the total number of customers that has placed an order
 SELECT COUNT(DISTINCT customer_key) AS total_customers FROM gold.fact_sales;
-
 
 -- Generate a Report that shows all key metrics of the business
 SELECT 'Total Sales' AS measure_name, SUM(sales_amount) AS measure_value FROM gold.fact_sales
