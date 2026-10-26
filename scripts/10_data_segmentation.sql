@@ -1,38 +1,27 @@
-/*
-===============================================================================
-Data Segmentation Analysis
-===============================================================================
-Purpose:
-    - To group data into meaningful categories for targeted insights.
-    - For customer segmentation, product categorization, or regional analysis.
-
-SQL Functions Used:
-    - CASE: Defines custom segmentation logic.
-    - GROUP BY: Groups data into segments.
-===============================================================================
-*/
-
-/*Segment products into cost ranges and 
+/* segment products into cost ranges and
 count how many products fall into each segment*/
-WITH product_segments AS (
-    SELECT
-        product_key,
-        product_name,
-        cost,
-        CASE 
-            WHEN cost < 100 THEN 'Below 100'
-            WHEN cost BETWEEN 100 AND 500 THEN '100-500'
-            WHEN cost BETWEEN 500 AND 1000 THEN '500-1000'
-            ELSE 'Above 1000'
-        END AS cost_range
-    FROM gold.dim_products
-)
-SELECT 
-    cost_range,
-    COUNT(product_key) AS total_products
-FROM product_segments
-GROUP BY cost_range
-ORDER BY total_products DESC;
+
+with product_segment as
+(
+select 
+product_key,
+product_name,
+cost,
+case 
+when cost < 100 then 'Below 100'
+when cost between 100 and 500 then '100-500'
+when cost between 500 and 1000 then '500-1000'
+Else 'Above 1000'
+end cost_range
+from gold.dim_products p )
+
+select 
+cost_range,
+count(product_key) product_count
+from product_segment
+group by cost_range 
+order by product_count desc
+
 
 /*Group customers into three segments based on their spending behavior:
 	- VIP: Customers with at least 12 months of history and spending more than €5,000.
@@ -40,30 +29,34 @@ ORDER BY total_products DESC;
 	- New: Customers with a lifespan less than 12 months.
 And find the total number of customers by each group
 */
-WITH customer_spending AS (
-    SELECT
-        c.customer_key,
-        SUM(f.sales_amount) AS total_spending,
-        MIN(order_date) AS first_order,
-        MAX(order_date) AS last_order,
-        DATEDIFF(month, MIN(order_date), MAX(order_date)) AS lifespan
-    FROM gold.fact_sales f
-    LEFT JOIN gold.dim_customers c
-        ON f.customer_key = c.customer_key
-    GROUP BY c.customer_key
+
+with group_segment as (
+select 
+c.customer_key customer_key,
+sum(f.sales_amount) total_spend,
+Min(order_date) as first_order , 
+max(order_date) as last_order,
+datediff(month , min(order_date) , max(order_date) ) lifespan
+from gold.fact_sales f
+left join  gold.dim_customers c 
+on c.customer_key= f.customer_key
+group by c.customer_key 
 )
-SELECT 
-    customer_segment,
-    COUNT(customer_key) AS total_customers
-FROM (
-    SELECT 
-        customer_key,
-        CASE 
-            WHEN lifespan >= 12 AND total_spending > 5000 THEN 'VIP'
-            WHEN lifespan >= 12 AND total_spending <= 5000 THEN 'Regular'
-            ELSE 'New'
-        END AS customer_segment
-    FROM customer_spending
-) AS segmented_customers
-GROUP BY customer_segment
-ORDER BY total_customers DESC;
+
+select 
+custoemr_segment,
+count(*) total_customer
+from
+(select 
+customer_key,
+lifespan , 
+total_spend,
+case 
+   when (lifespan >= 12 and  total_spend >5000) then 'VIP'
+   when (lifespan >= 12 and  total_spend<= 5000) then 'Regular'
+   else 'New'
+end custoemr_segment
+from group_segment
+)t
+group by custoemr_segment
+order by total_customer desc

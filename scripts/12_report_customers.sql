@@ -24,83 +24,81 @@ Highlights:
 -- =============================================================================
 -- Create Report: gold.report_customers
 -- =============================================================================
-IF OBJECT_ID('gold.report_customers', 'V') IS NOT NULL
-    DROP VIEW gold.report_customers;
-GO
 
-CREATE VIEW gold.report_customers AS
 
-WITH base_query AS(
-/*---------------------------------------------------------------------------
-1) Base Query: Retrieves core columns from tables
----------------------------------------------------------------------------*/
-SELECT
-f.order_number,
+
+create view gold.report_customers as
+with base_query as(
+select 
+f.order_number order_number,
 f.product_key,
 f.order_date,
-f.sales_amount,
-f.quantity,
-c.customer_key,
-c.customer_number,
-CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
-DATEDIFF(year, c.birthdate, GETDATE()) age
-FROM gold.fact_sales f
-LEFT JOIN gold.dim_customers c
-ON c.customer_key = f.customer_key
-WHERE order_date IS NOT NULL)
-
-, customer_aggregation AS (
-/*---------------------------------------------------------------------------
-2) Customer Aggregations: Summarizes key metrics at the customer level
----------------------------------------------------------------------------*/
-SELECT 
-	customer_key,
-	customer_number,
-	customer_name,
-	age,
-	COUNT(DISTINCT order_number) AS total_orders,
-	SUM(sales_amount) AS total_sales,
-	SUM(quantity) AS total_quantity,
-	COUNT(DISTINCT product_key) AS total_products,
-	MAX(order_date) AS last_order_date,
-	DATEDIFF(month, MIN(order_date), MAX(order_date)) AS lifespan
-FROM base_query
-GROUP BY 
-	customer_key,
-	customer_number,
-	customer_name,
-	age
-)
-SELECT
+f.sales_amount sales_amount,
+f.quantity quantity,
+c.customer_key customer_key,
+c.customer_number customer_number,
+CONCAT(c.first_name , ' ' , c.last_name ) customer_name,
+datediff(year , c.birthdate , getdate()) age
+from gold.fact_sales f
+left join gold.dim_customers c
+on f.customer_key = c.customer_key
+where order_date is not null )
+, customer_aggregation as(
+select 
 customer_key,
 customer_number,
 customer_name,
 age,
-CASE 
-	 WHEN age < 20 THEN 'Under 20'
-	 WHEN age between 20 and 29 THEN '20-29'
-	 WHEN age between 30 and 39 THEN '30-39'
-	 WHEN age between 40 and 49 THEN '40-49'
-	 ELSE '50 and above'
-END AS age_group,
-CASE 
-    WHEN lifespan >= 12 AND total_sales > 5000 THEN 'VIP'
-    WHEN lifespan >= 12 AND total_sales <= 5000 THEN 'Regular'
-    ELSE 'New'
-END AS customer_segment,
-last_order_date,
-DATEDIFF(month, last_order_date, GETDATE()) AS recency,
+count(distinct order_number) as total_orders,
+sum(sales_amount) as total_Sales,
+sum(quantity) as total_quantity,
+count(Distinct product_key) as total_products,
+max(order_date) as last_order,
+datediff(month , min(order_Date) , max(order_date) ) lifespan
+from base_query
+group by customer_key,customer_name,customer_number,age
+)
+
+select 
+customer_key,
+customer_name,
+customer_number,
+age,
+case 
+  when age < 20 then 'Under 20'
+  when age between 20 and 29 then '20-29'
+  when age between 30 and 39 then '30-39'
+  when age between 40 and 49 then '40-49'
+  else '50 and Above'
+end as age_group,
+case 
+  when lifespan >=12 and total_sales > 5000 then 'VIP' 
+  when lifespan >=12 and total_sales <=5000 then 'Regular'
+  else 'New'
+end as customer_segment,
+last_order,
+datediff(month , last_order, getdate()) as recency,
 total_orders,
-total_sales,
+total_Sales,
 total_quantity,
-total_products
+total_products,
 lifespan,
--- Compuate average order value (AVO)
-CASE WHEN total_sales = 0 THEN 0
-	 ELSE total_sales / total_orders
-END AS avg_order_value,
--- Compuate average monthly spend
-CASE WHEN lifespan = 0 THEN total_sales
-     ELSE total_sales / lifespan
-END AS avg_monthly_spend
-FROM customer_aggregation
+-- compuate avrage order value (Avo)
+case when total_orders = 0 then 0 
+else total_Sales / total_orders 
+end as avg_order_value,
+-- compute avrage monthly spend 
+case when lifespan = 0 then total_Sales
+else total_Sales / lifespan
+end avg_monthly_spend
+from customer_aggregation
+
+
+
+select 
+customer_segment,
+count(customer_number) as total_customers ,
+sum(total_sales) total_sales
+from gold.report_customers
+group by customer_segment
+

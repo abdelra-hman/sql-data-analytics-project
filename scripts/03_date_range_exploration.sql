@@ -1,27 +1,17 @@
-/*
-===============================================================================
-Date Range Exploration 
-===============================================================================
-Purpose:
-    - To determine the temporal boundaries of key data points.
-    - To understand the range of historical data.
+-- find the date of the first and last order
+-- how many year of sales are available
+select 
+min(order_date) first_order,
+max(order_date) last_order,
+datediff(year,min(order_date),max(order_date))  order_range_years
+from gold.fact_sales
 
-SQL Functions Used:
-    - MIN(), MAX(), DATEDIFF()
-===============================================================================
-*/
+-- find the youngest and oldest customer
 
--- Determine the first and last order date and the total duration in months
-SELECT 
-    MIN(order_date) AS first_order_date,
-    MAX(order_date) AS last_order_date,
-    DATEDIFF(MONTH, MIN(order_date), MAX(order_date)) AS order_range_months
-FROM gold.fact_sales;
 
--- Find the youngest and oldest customer based on birthdate
-SELECT
-    MIN(birthdate) AS oldest_birthdate,
-    DATEDIFF(YEAR, MIN(birthdate), GETDATE()) AS oldest_age,
-    MAX(birthdate) AS youngest_birthdate,
-    DATEDIFF(YEAR, MAX(birthdate), GETDATE()) AS youngest_age
-FROM gold.dim_customers;
+select 
+min(birthdate) as oldest_birthdate , 
+datediff(year , min(birthdate) , getdate()) as oldest_Age,
+max(birthdate) as youngest_birthdate,
+datediff(year , max(birthdate) , getdate()) as youngest_Age
+from gold.dim_customers
